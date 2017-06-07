@@ -796,16 +796,18 @@ public class LDAPIdentityStoreImpl implements IdentityStore
          {
             // Several identity types are mapped with the same LDAP Context DN. Will use the first one that have same DN from
             // name/type search
-
-            String name = Tools.stripDnToName(dn);
-
-            for (IdentityObjectType match : matches)
-            {
-               LDAPIdentityObjectImpl entry = (LDAPIdentityObjectImpl)this.findIdentityObject(ctx, name, match);
-               if (entry != null && Tools.dnEquals(entry.getDn(), dn))
-               {
-                  type = match;
-                  break;
+            for (IdentityObjectType match : matches) {
+               LDAPIdentityObjectTypeConfiguration typeConfiguration = getTypeConfiguration(ctx, match);
+               Name jndiName = new CompositeName().add(dn);
+               Attributes attrs = ldapContext.getAttributes(jndiName);
+               Attribute nameAttribute = attrs.get(typeConfiguration.getIdAttributeName());
+               if (nameAttribute != null) {
+                  String name = nameAttribute.get().toString();
+                  LDAPIdentityObjectImpl entry = (LDAPIdentityObjectImpl) this.findIdentityObject(ctx, name, match);
+                  if (entry != null && Tools.dnEquals(entry.getDn(), dn)) {
+                     type = match;
+                     break;
+                  }
                }
             }
          }
